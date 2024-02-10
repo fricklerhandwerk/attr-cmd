@@ -12,45 +12,36 @@ in
 rec {
   attr-cmd = attrs:
     let
-      command = name: inner:
+      subcommand = name: value:
         with pkgs.lib;
-        if isDerivation inner then pkgs.writeScriptBin name ''${inner}/bin/${name} "$@"''
-        else if isAttrs inner
+        if isDerivation value then ''exec ${value}/bin/${name} "$@"''
+        else if isAttrs value
         then
           let
             cases = name: attr: ''
               ${name})
                 shift
-                exec ${command name attr}/bin/${name} "$@"
-                ;;
-            '';
-            echo-indented = depth: strings:
-              let
-                indent = concatStrings (builtins.genList (x: " ") depth);
-              in
-              ''${concatStringsSep "\n" (map (x: "echo '${indent}${x}'") strings)}'';
+                ${concatStringsSep "\n  " (splitString "\n" (subcommand name attr))}
+                ;;'';
           in
-          pkgs.writeShellApplication
-            {
-              inherit name;
-              text = ''
-                if [ $# -eq 0 ]; then
-                  echo "Available subcommands:"
-                  ${echo-indented 2 (attrNames inner)}
-                  exit 1
-                fi
-                case "$1" in
-                  ${concatStringsSep "\n" (mapAttrsToList cases inner)}
-                  *)
-                    echo "Subcommand '$1' not available. Available subcommands:"
-                    ${echo-indented 2 (attrNames inner)}
-                    exit 1
-                    ;;
-                esac
-              '';
-            }
+          ''
+            if [ $# -eq 0 ]; then
+              echo "Available subcommands:"
+              ${concatStringsSep "\n  " (map (x: "echo '  ${x}'") (attrNames value))}
+              exit 1
+            fi
+            case "$1" in
+              ${concatStringsSep "\n  " (map (block: concatStringsSep "\n  " (splitString "\n" block)) (mapAttrsToList cases value))}
+              *)
+                echo "Subcommand '$1' not available. Available subcommands:"
+                ${concatStringsSep "\n    " (map (x: "echo '  ${x}'") (attrNames value))}
+                exit 1
+                ;;
+            esac''
         else
           throw "attribute '${name}' must be a derivation or an attribute set";
+      command = name: value:
+        pkgs.writeShellApplication { inherit name; text = (subcommand name value); };
     in
     pkgs.lib.mapAttrs command attrs;
   shell = pkgs.mkShellNoCC {
@@ -60,4 +51,5 @@ rec {
   };
   commands = attr-cmd { inherit foo; };
   foo.bar.baz = pkgs.writeScriptBin "baz" "echo success $@";
+  foo.qux.qum = pkgs.writeScriptBin "qum" "echo failure";
 }
