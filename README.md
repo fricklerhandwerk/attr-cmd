@@ -4,27 +4,16 @@ Build shell commands from Nix attribute sets.
 
 ## Usage
 
-`attr-cmd` takes an as argument an attribute set with the following attributes:
+`attr-cmd` takes an as argument an attribute set to be converted to commands.
 
-- `path` (Path)
-
-  Directory of the `default.nix` Nix file containing the attributes that are passed as `attrs`.
-
-  Nix expressions in this directory must be pure.
-  In particular, they must refer only to sub-paths of the directory.
-  If the target directory is large, consider filtering only relevant files with the [fileset library](https://nixos.org/manual/nixpkgs/unstable/#sec-functions-library-fileset).
-
-- `attrs` (Attribute Set)
-
-  Attributes to convert to commands.
-  Each leaf attribute `<leaf>` should evaluate to a [derivation](https://nix.dev/manual/nix/2.19/language/derivations) that has `/bin/<leaf>` in its default [output](https://nix.dev/manual/nix/2.19/language/derivations#attr-outputs).
+Each leaf attribute `<leaf>` must evaluate to a [derivation](https://nix.dev/manual/nix/2.19/language/derivations) that has `/bin/<leaf>` in its default [output](https://nix.dev/manual/nix/2.19/language/derivations#attr-outputs).
 
 It returns an attribute set of derivations, where each deriviation produces `/bin/<root>` for a root attribute `<root>` in `attrs`.
 
-Then you can run the executable in each `<leaf>` by specifying its attribute path as command line arguments:
+After adding the derivations to the environment, run the executable in each `<leaf>` by specifying its attribute path as command line arguments:
 
 ```console
-<root> ... <leaf> [-- <arguments>]
+<root> ... <leaf> [<arguments>]...
 ```
 
 ## Example
@@ -44,8 +33,8 @@ let
   inherit (import sources.attr-cmd { inherit sources system; }) attr-cmd;
 in
 rec {
-  foo.bar.baz = pkgs.writeScriptBin "baz" "echo success";
-  commands = attr-cmd { path = ./.; attrs = { inherit foo; }; };
+  foo.bar.baz = pkgs.writeScriptBin "baz" "echo success $@";
+  commands = attr-cmd { inherit foo; }; ;
   shell = pkgs.mkShellNoCC {
     packages = builtins.attrValues commands ++ [
       pkgs.npins
@@ -59,6 +48,8 @@ $ nix-shell -p npins --run "npins init"
 $ nix-shell
 [nix-shell:~]$ foo bar baz
 success
+[nix-shell:~]$ foo bar baz or else
+success or else
 ```
 
 ## Development
@@ -73,22 +64,14 @@ success
 Passing arguments also works:
 
 ```console
-$ nix-shell --run "foo bar baz -- and other stuff"
-success and other stuff
+$ nix-shell --run "foo bar baz or else"
+success or else
 ```
 
 Actual tests would be great.
 
-The script itself can be made configurable to death with extra attributes in its argument.
-For instance, currently it uses the ambient `nix-build` without parameters.
-
-There is also no error handling whatsoever.
-The given attribute path has to exist and evaluate to a derivation.
-A more sophisticated approach would be testing the passed attributes for validity.
-For example, if the given attribute path exists but does not evaluate to a derivation one could print an error message that suggests other attributes.
-
-All of this would get a lot easier with [Python bindings to the Nix language evaluator](https://github.com/tweag/python-nix).
-But for performance reasons it should probably be done in C.
+To further optimise the invocation, it could be ported to C.
+The library would then depend on a C compiler, but everything does in Nixpkgs anyway.
 
 ## Motivation
 
@@ -346,10 +329,7 @@ rec {
     bar = ./machines/bar.nix;
     # ...
   };
-  commands = attr-cmd {
-    path = ./.;
-    attrs = { inherit nixos; };
-  };
+  commands = attr-cmd { inherit nixos; };
   shell = pkgs.mkShellNoCC {
     packages = builtins.attrValues commands ++ [
       pkgs.npins

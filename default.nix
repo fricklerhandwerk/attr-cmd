@@ -10,31 +10,54 @@ let
   };
 in
 rec {
-  attr-cmd = { path, attrs }:
+  attr-cmd = attrs:
     let
-      command = name: pkgs.writeShellApplication {
-        inherit name;
-        text = ''
-          attrs=()
-          while (( "$#" )); do
-            if [[ "$1" == "--" ]]; then
-              shift
-              break
-            fi
-            attrs+=("$1")
-            shift
-          done
-          attrpath=${name}."$(IFS=.; echo "''${attrs[*]}")"
-          "$(nix-build ${path} -A "$attrpath" --no-out-link)"/bin/"''${attrs[-1]}" "$@"
-        '';
-      };
+      command = name: inner:
+        with pkgs.lib;
+        if isDerivation inner then pkgs.writeScriptBin name ''${inner}/bin/${name} "$@"''
+        else if isAttrs inner
+        then
+          let
+            cases = name: attr: ''
+              ${name})
+                shift
+                exec ${command name attr}/bin/${name} "$@"
+                ;;
+            '';
+            echo-indented = depth: strings:
+              let
+                indent = concatStrings (builtins.genList (x: " ") depth);
+              in
+              ''${concatStringsSep "\n" (map (x: "echo '${indent}${x}'") strings)}'';
+          in
+          pkgs.writeShellApplication
+            {
+              inherit name;
+              text = ''
+                if [ $# -eq 0 ]; then
+                  echo "Available subcommands:"
+                  ${echo-indented 2 (attrNames inner)}
+                  exit 1
+                fi
+                case "$1" in
+                  ${concatStringsSep "\n" (mapAttrsToList cases inner)}
+                  *)
+                    echo "Subcommand '$1' not available. Available subcommands:"
+                    ${echo-indented 2 (attrNames inner)}
+                    exit 1
+                    ;;
+                esac
+              '';
+            }
+        else
+          throw "attribute '${name}' must be a derivation or an attribute set";
     in
-    builtins.mapAttrs (name: attr: command name) attrs;
+    pkgs.lib.mapAttrs command attrs;
   shell = pkgs.mkShellNoCC {
     packages = builtins.attrValues commands ++ [
       pkgs.npins
     ];
   };
-  commands = attr-cmd { path = ./.; attrs = { inherit foo; }; };
+  commands = attr-cmd { inherit foo; };
   foo.bar.baz = pkgs.writeScriptBin "baz" "echo success $@";
 }
