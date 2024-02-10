@@ -36,5 +36,5 @@ rec {
     ];
   };
   commands = attr-cmd { path = ./.; attrs = { inherit foo; }; };
-  foo.bar.baz = pkgs.writeScriptBin "baz" "echo success";
+  foo.bar.baz = pkgs.writeScriptBin "baz" "echo success $@";
 }

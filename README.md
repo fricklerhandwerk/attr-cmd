@@ -21,6 +21,12 @@ Build shell commands from Nix attribute sets.
 
 It returns an attribute set of derivations, where each deriviation produces `/bin/<root>` for a root attribute `<root>` in `attrs`.
 
+Then you can run the executable in each `<leaf>` by specifying its attribute path as command line arguments:
+
+```console
+<root> ... <leaf> [-- <arguments>]
+```
+
 ## Example
 
 ```nix
@@ -62,6 +68,13 @@ For a smoke test, run:
 ```console
 $ nix-shell --run "foo bar baz"
 success
+```
+
+Passing arguments also works:
+
+```console
+$ nix-shell --run "foo bar baz -- and other stuff"
+success and other stuff
 ```
 
 Actual tests would be great.
