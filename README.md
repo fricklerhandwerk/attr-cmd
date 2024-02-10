@@ -2,9 +2,82 @@
 
 Build shell commands from Nix attribute sets.
 
+## Usage
+
+`attr-cmd` takes an as argument an attribute set with the following attributes:
+
+- `path` (Path)
+
+  Directory of the `default.nix` Nix file containing the attributes that are passed as `attrs`.
+
+  Nix expressions in this directory must be pure.
+  In particular, they must refer only to sub-paths of the directory.
+  If the target directory is large, consider filtering only relevant files with the [fileset library](https://nixos.org/manual/nixpkgs/unstable/#sec-functions-library-fileset).
+
+- `attrs` (Attribute Set)
+
+  Attributes to convert to commands.
+  Each leaf attribute `<leaf>` should evaluate to a [derivation](https://nix.dev/manual/nix/2.19/language/derivations) that has `/bin/<leaf>` in its default [output](https://nix.dev/manual/nix/2.19/language/derivations#attr-outputs).
+
+It returns an attribute set of derivations, where each deriviation produces `/bin/<root>` for a root attribute `<root>` in `attrs`.
+
+## Example
+
+```nix
+# ./default.nix
+{
+  sources ? import ./npins,
+  system ? builtins.currentSystem,
+}:
+let
+  pkgs = import sources.nixpkgs {
+    inherit system;
+    config = { };
+    overlays = [ ];
+  };
+  inherit (import sources.attr-cmd { inherit sources system; }) attr-cmd;
+in
+rec {
+  foo.bar.baz = pkgs.writeScriptBin "baz" "echo success";
+  commands = attr-cmd { path = ./.; attrs = { inherit foo; }; };
+  shell = pkgs.mkShellNoCC {
+    packages = builtins.attrValues commands ++ [
+      pkgs.npins
+    ];
+  };
+}
+```
+
+```console
+$ nix-shell
+[nix-shell:~]$ foo bar baz
+success
+```
+
+## Development
+
+For a smoke test, run:
+
+```console
+$ nix-shell --run "foo bar baz"
+success
+```
+
+Actual tests would be great.
+
+The script itself can be made configurable to death with extra attributes in its argument.
+For instance, currently it uses the ambient `nix-build` without parameters.
+
+There is also no error handling whatsoever.
+The given attribute path has to exist and evaluate to a derivation.
+A more sophisticated approach would be testing the passed attributes for validity.
+For example, if the given attribute path exists but does not evaluate to a derivation one could print an error message that suggests other attributes.
+
+All of this would get a lot easier with [Python bindings to the Nix language evaluator](https://github.com/tweag/python-nix).
+
 ## Motivation
 
-I keep running into a scalability problem with the following pattern:
+I kept running into a scalability problem with the following pattern:
 
 Assume we have a `default.nix` that specifies various NixOS configurations as attributes:
 
