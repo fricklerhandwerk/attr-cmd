@@ -88,6 +88,7 @@ A more sophisticated approach would be testing the passed attributes for validit
 For example, if the given attribute path exists but does not evaluate to a derivation one could print an error message that suggests other attributes.
 
 All of this would get a lot easier with [Python bindings to the Nix language evaluator](https://github.com/tweag/python-nix).
+But for performance reasons it should probably be done in C.
 
 ## Motivation
 
