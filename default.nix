@@ -11,45 +11,81 @@ let
 in
 rec {
   attr-cmd = attrs:
+    with pkgs.lib;
     let
-      subcommand = name: value:
-        with pkgs.lib;
+      subcommand = prefix: name: value:
         if isDerivation value then ''exec ${value}/bin/${name} "$@"''
         else if isAttrs value
         then
           let
-            cases = name: attr: ''
+            case = name: value: ''
               ${name})
                 shift
-                ${concatStringsSep "\n  " (splitString "\n" (subcommand name attr))}
+                ${indent "  " (lines (subcommand (prefix ++ [name]) name value))}
                 ;;'';
           in
           ''
             if [ $# -eq 0 ]; then
-              echo "Available subcommands:"
-              ${concatStringsSep "\n  " (map (x: "echo '  ${x}'") (attrNames value))}
+              ${indent "  " (mapLines (x: "echo \"${x}\"") (available prefix value))}
               exit 1
             fi
             case "$1" in
-              ${concatStringsSep "\n  " (map (block: concatStringsSep "\n  " (splitString "\n" block)) (mapAttrsToList cases value))}
+              ${indent "  " (map (block: indent "  " (lines block)) (mapAttrsToList case value))}
               *)
-                echo "Subcommand '$1' not available. Available subcommands:"
-                ${concatStringsSep "\n    " (map (x: "echo '  ${x}'") (attrNames value))}
+                echo "Error: Invalid subcommand '$1'"
+                ${indent "    " (mapLines (x: "echo \"${x}\"") (available prefix value))}
                 exit 1
                 ;;
             esac''
         else
-          throw "attribute '${name}' must be a derivation or an attribute set";
+          throw "attr-cmd: '${join "." prefix}' must be a derivation or an attribute set, but its type is '${builtins.typeOf value}'";
+
+      available = prefix: value:
+        let
+          attrpaths =
+            let
+              # collect linear attribute paths.
+              # that is, stop either at derivations, or when an attribute set has more than one entry.
+              recurse = prefix: attrs:
+                concatLists (mapAttrsToList
+                  (name: value:
+                    if isDerivation value then [ (prefix ++ [ name ]) ]
+                    else if isAttrs value then
+                      if length (attrNames value) > 1 then [ (prefix ++ [ name ]) ]
+                      else recurse (prefix ++ [ name ]) value
+                    else [ ]
+                  )
+                  attrs);
+            in
+            recurse [ ];
+        in
+        ''
+          Usage: ${join " " prefix} [subcommand]... [argument]...
+
+          Available subcommands:
+            ${indent "  " (map (join " ") (attrpaths value))}'';
+
+      join = concatStringsSep;
+      indent = prefix: join "\n${prefix}";
+      lines = splitString "\n";
+      mapLines = f: text: map f (lines text);
+
       command = name: value:
-        pkgs.writeShellApplication { inherit name; text = (subcommand name value); };
+        pkgs.writeShellApplication { inherit name; text = (subcommand [ name ] name value); };
+
     in
     pkgs.lib.mapAttrs command attrs;
+
   shell = pkgs.mkShellNoCC {
     packages = builtins.attrValues commands ++ [
       pkgs.npins
     ];
   };
+
   commands = attr-cmd { inherit foo; };
+
   foo.bar.baz = pkgs.writeScriptBin "baz" "echo success $@";
+  foo.bam = pkgs.writeScriptBin "bam" "echo bam";
   foo.qux.qum = pkgs.writeScriptBin "qum" "echo failure";
+  foo.qux.zut = pkgs.writeScriptBin "zut" "echo shh";
 }
