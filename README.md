@@ -49,6 +49,7 @@ rec {
 ```
 
 ```console
+$ nix-shell -p npins --run "npins init"
 $ nix-shell
 [nix-shell:~]$ foo bar baz
 success
