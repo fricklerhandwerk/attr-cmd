@@ -14,12 +14,12 @@ rec {
     with pkgs.lib;
     let
       subcommand = prefix: name: value:
-        if isDerivation value then ''exec ${value}/bin/${name} "$@"''
+        if isDerivation value then ''exec ${getExe' value (value.meta.mainProgram or name)} "$@"''
         else if isAttrs value
         then
           let
             case = name: value: ''
-              ${name})
+              "${name}")
                 shift
                 ${indent "  " (lines (subcommand (prefix ++ [name]) name value))}
                 ;;'';
