@@ -73,9 +73,6 @@ success or else
 
 Actual tests would be great.
 
-To further optimise the invocation, it could be ported to C.
-The library would then depend on a C compiler, but everything does in Nixpkgs anyway.
-
 ## Motivation
 
 I kept running into a scalability problem with the following pattern:
