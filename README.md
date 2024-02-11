@@ -6,15 +6,18 @@ Build shell commands from Nix attribute sets.
 
 `attr-cmd` takes an as argument an attribute set to be converted to commands.
 
-Each leaf attribute `<leaf>` must evaluate to a [derivation](https://nix.dev/manual/nix/2.19/language/derivations) that has `/bin/<leaf>` in its default [output](https://nix.dev/manual/nix/2.19/language/derivations#attr-outputs).
+Each attribute `<attr>` that evaluates to a [derivation](https://nix.dev/manual/nix/2.19/language/derivations) will be considered the final subcommand.
+Calling it will run `meta.mainProgram` if set, or `/bin/<attr>`, from its `bin` [output](https://nix.dev/manual/nix/2.19/language/derivations#attr-outputs).
 
-It returns an attribute set of derivations, where each deriviation produces `/bin/<root>` for a root attribute `<root>` in `attrs`.
+It returns an attribute set of derivations, where each deriviation produces `/bin/<root>` for a `<root>` attribute in `attrs`.
 
-After adding the derivations to the environment, run the executable in each `<leaf>` by specifying its attribute path as command line arguments:
+After adding the derivations to the environment, run the executable in each `<attr>` by specifying its attribute path as command line arguments:
 
 ```console
 <root> ... <leaf> [<arguments>]...
 ```
+
+Help will be shown for intermediate subcommands, displaying `meta.description` on a derivation or attribute set if available.
 
 ## Example
 

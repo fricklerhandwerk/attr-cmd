@@ -23,17 +23,18 @@ rec {
                 shift
                 ${indent "  " (lines (subcommand (prefix ++ [name]) name value))}
                 ;;'';
+            valid = value: attrsets.filterAttrs (_: v: isAttrs v) value;
           in
           ''
             if [ $# -eq 0 ]; then
-              ${indent "  " (mapLines (x: "echo \"${x}\"") (available prefix value))}
+              ${indent "  " (mapLines (x: "echo \"${x}\"") (available prefix (valid value)))}
               exit 1
             fi
             case "$1" in
-              ${indent "  " (map (block: indent "  " (lines block)) (mapAttrsToList case value))}
+              ${indent "  " (map (block: indent "  " (lines block)) (mapAttrsToList case (valid value)))}
               *)
                 echo "Error: Invalid subcommand '$1'"
-                ${indent "    " (mapLines (x: "echo \"${x}\"") (available prefix value))}
+                ${indent "    " (mapLines (x: "echo \"${x}\"") (available prefix (valid value)))}
                 exit 1
                 ;;
             esac''
@@ -49,21 +50,37 @@ rec {
               recurse = prefix: attrs:
                 concatLists (mapAttrsToList
                   (name: value:
-                    if isDerivation value then [ (prefix ++ [ name ]) ]
+                    if isDerivation value then [ (prefix ++ [{ inherit name value; }]) ]
                     else if isAttrs value then
-                      if length (attrNames value) > 1 then [ (prefix ++ [ name ]) ]
-                      else recurse (prefix ++ [ name ]) value
+                      if length (attrNames value) > 1 then [ (prefix ++ [{ inherit name value; }]) ]
+                      else recurse (prefix ++ [{ inherit name value; }]) value
                     else [ ]
                   )
                   attrs);
             in
             recurse [ ];
+          info-lines =
+            # a lot of effort to avoid trailing spaces
+            let
+              cmd = path: join " " (attrNames (listToAttrs path));
+              cmds = map cmd (attrpaths value);
+              info = path: (lists.last (attrValues (listToAttrs path))).meta.description or "";
+              infos = map info (attrpaths value);
+              pad = strings:
+                let
+                  longest = foldl' (acc: elem: if elem > acc then elem else acc) 0 (map stringLength strings);
+                  fill = string: string + join "" (genList (x: " ") (longest - (stringLength string)));
+                in
+                map fill strings;
+              padded = lists.imap0 (i: x: if elemAt infos i == "" then elemAt cmds i else x) (pad cmds);
+            in
+            zipListsWith (path: info: if info == "" then path else "${path} - ${info}") padded infos;
         in
         ''
           Usage: ${join " " prefix} [subcommand]... [argument]...
 
           Available subcommands:
-            ${indent "  " (map (join " ") (attrpaths value))}'';
+            ${indent "  " info-lines}'';
 
       join = concatStringsSep;
       indent = prefix: join "\n${prefix}";
@@ -86,6 +103,7 @@ rec {
 
   foo.bar.baz = pkgs.writeScriptBin "baz" "echo success $@";
   foo.bam = pkgs.writeScriptBin "bam" "echo bam";
-  foo.qux.qum = pkgs.writeScriptBin "qum" "echo failure";
-  foo.qux.zut = pkgs.writeScriptBin "zut" "echo shh";
+  foo.qux.zip = pkgs.writeScriptBin "zip" "echo shh";
+  foo.qux.meta.description = "additional quxings";
+  foo.qux.greet = pkgs.hello;
 }
