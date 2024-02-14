@@ -17,14 +17,14 @@ rec {
           in
           ''
             if [ $# -eq 0 ]; then
-              ${indent "  " (mapLines (x: "echo \"${x}\"") (available prefix (valid value)))}
+              ${indent "  " (mapLines (x: "echo \"${x}\" >&2") (available prefix (valid value)))}
               exit 1
             fi
             case "$1" in
               ${indent "  " (map (block: indent "  " (lines block)) (mapAttrsToList case (valid value)))}
               *)
-                echo "Error: Invalid subcommand '$1'"
-                ${indent "    " (mapLines (x: "echo \"${x}\"") (available prefix (valid value)))}
+                echo "Error: Invalid subcommand '$1'" >&2
+                ${indent "    " (mapLines (x: "echo \"${x}\" >&2") (available prefix (valid value)))}
                 exit 1
                 ;;
             esac''
