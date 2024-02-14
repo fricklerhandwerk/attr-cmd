@@ -4,17 +4,17 @@ Build shell commands from Nix attribute sets.
 
 ## Usage
 
-`attr-cmd` takes an as argument an attribute set to be converted to commands.
+`attr-cmd` transforms a nested attribute set `<attrs-in>` into a flat attribute set `<attrs-out>`.
+For each attribute `<attr>` of `<attrs-in>` at the [attribute path](https://nix.dev/manual/nix/stable/language/operators.html#attribute-selection) `<root> . [...] . <attr>` that evaluates to a [derivation](https://nix.dev/manual/nix/stable/language/derivations), it creates an attribute `<root>` in `<attrs-out>`.
 
-Each attribute `<attr>` that evaluates to a [derivation](https://nix.dev/manual/nix/2.19/language/derivations) will be considered the final subcommand.
-Calling it will run `meta.mainProgram` if set, or `/bin/<attr>`, from its `bin` [output](https://nix.dev/manual/nix/2.19/language/derivations#attr-outputs).
+Each attribute `<root>` in `<attrs-out>` is a derivation that produces an executable `/bin/<root>`.
+Such an executable `<root>` accepts [command line words](https://www.gnu.org/software/bash/manual/bash.html#index-word) that correspond to attribute paths in `<attrs-in>` starting from `<root>`.
+The final command line word `<attr>` executes the `meta.mainProgram` (or `/bin/<attr>`) from the derivation's `bin` (or `out`) [output](https://nix.dev/manual/nix/stable/language/derivations#attr-outputs) at the corresponding attribute `<attr>` from `<attrs-in>`.
 
-It returns an attribute set of derivations, where each deriviation produces `/bin/<root>` for a `<root>` attribute in `attrs`.
-
-After adding the derivations to the environment, run the executable in each `<attr>` by specifying its attribute path as command line arguments:
+After adding the derivations from `<attrs-out>` to the environment, run the executable `<attr>` by specifying its attribute path as command line arguments:
 
 ```console
-<root> ... <leaf> [<arguments>]...
+<root> ... <attr> [<arguments>]...
 ```
 
 Help will be shown for intermediate subcommands, displaying `meta.description` on a derivation or attribute set if available.
