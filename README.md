@@ -33,7 +33,7 @@ let
     config = { };
     overlays = [ ];
   };
-  inherit (import sources.attr-cmd { inherit sources system; }) attr-cmd;
+  inherit (pkgs.callPackage "${sources.attr-cmd}/lib.nix" {}) attr-cmd;
 in
 rec {
   foo.bar.baz = pkgs.writeScriptBin "baz" "echo success $@";
@@ -60,14 +60,14 @@ success or else
 For a smoke test, run:
 
 ```console
-$ nix-shell --run "foo bar baz"
+$ nix-shell test.nix --run "foo bar baz"
 success
 ```
 
 Passing arguments also works:
 
 ```console
-$ nix-shell --run "foo bar baz or else"
+$ nix-shell test.nix --run "foo bar baz or else"
 success or else
 ```
 
