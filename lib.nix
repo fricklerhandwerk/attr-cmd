@@ -18,18 +18,16 @@ rec {
                 ;;'';
           in
           ''
-            if [ $# -eq 0 ]; then
-              ${indent "  " (mapLines (x: "echo \"${x}\" >&2") (available prefix (valid value)))}
-              exit 1
+            if [ $# -ne 0 ]; then
+              case "$1" in
+                ${indent "  " (map (block: indent "  " (lines block)) (mapAttrsToList case (valid value)))}
+                *)
+                  echo "Error: Invalid subcommand '$1'" >&2
+                  ;;
+              esac
             fi
-            case "$1" in
-              ${indent "  " (map (block: indent "  " (lines block)) (mapAttrsToList case (valid value)))}
-              *)
-                echo "Error: Invalid subcommand '$1'" >&2
-                ${indent "    " (mapLines (x: "echo \"${x}\" >&2") (available prefix (valid value)))}
-                exit 1
-                ;;
-            esac''
+            ${join "\n" (mapLines (x: "echo \"${x}\" >&2") (available (prefix ++ [name]) (valid value)))}
+            exit 1''
         else
           throw "attr-cmd: '${join "." prefix}' must be a derivation or an attribute set, but its type is '${builtins.typeOf value}'";
 
@@ -81,10 +79,8 @@ rec {
           Available subcommands:
             ${indent "  " info-lines}'';
 
-
       command = name: value:
-        writeShellApplication { inherit name; text = (subcommand [ name ] name value); };
-
+        writeShellApplication { inherit name; text = subcommand [ ] name value; };
     in
     lib.mapAttrs command (valid attrs);
 
