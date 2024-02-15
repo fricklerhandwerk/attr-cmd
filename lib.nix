@@ -2,6 +2,9 @@
 rec {
   attr-cmd = attrs:
     let
+      valid = value:
+        with lib;
+        attrsets.filterAttrs (_: anyLeaf isDerivation) value;
       subcommand = prefix: name: value:
         with lib;
         if isDerivation value then ''exec ${getExe' value (value.meta.mainProgram or name)} "$@"''
@@ -13,7 +16,6 @@ rec {
                 shift
                 ${indent "  " (lines (subcommand (prefix ++ [name]) name value))}
                 ;;'';
-            valid = value: attrsets.filterAttrs (_: v: isAttrs v) value;
           in
           ''
             if [ $# -eq 0 ]; then
@@ -84,11 +86,14 @@ rec {
         writeShellApplication { inherit name; text = (subcommand [ name ] name value); };
 
     in
-    lib.mapAttrs command attrs;
+    lib.mapAttrs command (valid attrs);
 
   join = lib.concatStringsSep;
   indent = prefix: join "\n${prefix}";
   lines = lib.splitString "\n";
   mapLines = f: text: map f (lines text);
   max = lib.foldl' (acc: elem: if elem > acc then elem else acc) 0;
+  anyLeaf = predicate: value:
+    with lib;
+    predicate value || isAttrs value && any (anyLeaf predicate) (attrValues value);
 }

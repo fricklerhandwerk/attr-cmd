@@ -6,6 +6,7 @@ Build shell commands from Nix attribute sets.
 
 `attr-cmd` transforms a nested attribute set `<attrs-in>` into a flat attribute set `<attrs-out>`.
 For each attribute `<attr>` of `<attrs-in>` at the [attribute path](https://nix.dev/manual/nix/stable/language/operators.html#attribute-selection) `<root> . [...] . <attr>` that evaluates to a [derivation](https://nix.dev/manual/nix/stable/language/derivations), it creates an attribute `<root>` in `<attrs-out>`.
+All other attribute paths are ignored.
 
 Each attribute `<root>` in `<attrs-out>` is a derivation that produces an executable `/bin/<root>`.
 Such an executable `<root>` accepts [command line words](https://www.gnu.org/software/bash/manual/bash.html#index-word) that correspond to attribute paths in `<attrs-in>` starting from `<root>`.

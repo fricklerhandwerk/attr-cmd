@@ -18,11 +18,12 @@ rec {
     ];
   };
 
-  commands = attr-cmd { inherit foo; };
-
-  foo.bar.baz = pkgs.writeScriptBin "baz" "echo success $@";
-  foo.bam = pkgs.writeScriptBin "bam" "echo bam";
-  foo.qux.zip = pkgs.writeScriptBin "zip" "echo shh";
-  foo.qux.meta.description = "additional quxings";
-  foo.qux.greet = pkgs.hello;
+  commands = attr-cmd {
+    foo.bar.baz = pkgs.writeScriptBin "baz" "echo success $@";
+    foo.bam = pkgs.writeScriptBin "bam" "echo bam";
+    foo.qux.zip = pkgs.writeScriptBin "zip" "echo shh";
+    foo.qux.meta.description = "additional quxings";
+    foo.qux.greet = pkgs.hello;
+    nope = "nope";
+  };
 }
