@@ -21,7 +21,7 @@ All other attribute paths are ignored.
 >     d.e.f = drv';
 >     g.h.i = "ignored";
 >   };
->   output = attr-cmd input;
+>   output = attr-cmd.exec input;
 > in
 > {
 >   inherit = output;
