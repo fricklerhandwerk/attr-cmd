@@ -1,5 +1,29 @@
 {
   "pins": {
+    "git-hooks": {
+      "type": "Git",
+      "repository": {
+        "type": "GitHub",
+        "owner": "fricklerhandwerk",
+        "repo": "git-hooks"
+      },
+      "branch": "main",
+      "revision": "5a23214ca74a7656048fe1402c4e98f5cd2b3729",
+      "url": "https://github.com/fricklerhandwerk/git-hooks/archive/5a23214ca74a7656048fe1402c4e98f5cd2b3729.tar.gz",
+      "hash": "0bml5mpflnq1995b0ac8cdl4ch74svrxzkc7h9c0jvpvjcl1frpc"
+    },
+    "nixdoc-to-github": {
+      "type": "Git",
+      "repository": {
+        "type": "GitHub",
+        "owner": "fricklerhandwerk",
+        "repo": "nixdoc-to-github"
+      },
+      "branch": "main",
+      "revision": "2a5826e460df7deb8618084fa3df1d1882e352d3",
+      "url": "https://github.com/fricklerhandwerk/nixdoc-to-github/archive/2a5826e460df7deb8618084fa3df1d1882e352d3.tar.gz",
+      "hash": "18dnhcdx661fs2x9gf9dwvsvyw7j2gximgikw3325g8v8cjrkgs0"
+    },
     "nixpkgs": {
       "type": "Git",
       "repository": {
@@ -7,10 +31,10 @@
         "owner": "nixos",
         "repo": "nixpkgs"
       },
-      "branch": "nixos-23.11",
-      "revision": "6832d0d99649db3d65a0e15fa51471537b2c56a6",
-      "url": "https://github.com/nixos/nixpkgs/archive/6832d0d99649db3d65a0e15fa51471537b2c56a6.tar.gz",
-      "hash": "1ww2vrgn8xrznssbd05hdlr3d4br6wbjlqprys1al8ahxkyl5syi"
+      "branch": "nixpkgs-unstable",
+      "revision": "abd6d48f8c77bea7dc51beb2adfa6ed3950d2585",
+      "url": "https://github.com/nixos/nixpkgs/archive/abd6d48f8c77bea7dc51beb2adfa6ed3950d2585.tar.gz",
+      "hash": "0lisfh5b3dgcjb083nsxmffvzxzs6ir1jfsxfaf29gjpjnv7sm7f"
     }
   },
   "version": 3
