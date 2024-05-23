@@ -141,7 +141,7 @@ rec {
             with lib;
             # a lot of effort to avoid trailing spaces
             let
-              cmd = path: join " " (attrNames (listToAttrs path));
+              cmd = path: join " " (map (p: p.name) path);
               cmds = map cmd (attrpaths value);
               info = path: (lists.last (attrValues (listToAttrs path))).meta.description or "";
               infos = map info (attrpaths value);
