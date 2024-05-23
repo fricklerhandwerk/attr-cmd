@@ -98,10 +98,10 @@ rec {
         else if isAttrs value
         then
           let
-            case = name: value: ''
-              "${name}")
+            case = name': value': ''
+              "${name'}")
                 shift
-                ${indent "  " (lines (subcommand (prefix ++ [name]) name value))}
+                ${indent "  " (lines (subcommand (prefix ++ [name]) name' value'))}
                 ;;'';
           in
           ''
